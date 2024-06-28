@@ -1,0 +1,97 @@
+---
+title: "ANA 515 Assignment 3"
+author: "Grace Zeng"
+date: "6/28/2024"
+output:
+  html_document: null
+  theme: journal
+  pdf_document: default
+---
+
+
+```{r setup, include= FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+
+```{r task1, include = FALSE}
+#task 1:Move this into a good local directory for your current working directory and read and save it. (5 points)
+getwd() 
+#/Users/gracez/Desktop/ANA 515 Data Storage, Retrieval and Preparation 
+StormEvents<- read.csv("~/StormEvents_details-ftp_v1.0_d1997_c20220425.csv")
+view (StormEvents)
+```
+
+```{r task2, include = FALSE}
+#task 2:Limit the dataframe to the following columns: (10 points)
+myvars <- c("BEGIN_YEARMONTH", "EPISODE_ID", "STATE", "STATE_FIPS", "CZ_NAME", "CZ_TYPE", "CZ_FIPS", "EVENT_TYPE")
+new_StormEvents <- StormEvents[myvars]
+view (new_StormEvents)
+```
+
+```{r task3, include = FALSE}
+#task 3: Arrange the data by the state name (STATE) (5 points) 
+new_StormEvents <- arrange(new_StormEvents, STATE)
+
+```
+
+```{r task4, include = FALSE}
+#task 4: Change state and county names to title case (e.g., “New Jersey” instead of “NEW JERSEY”) 
+new_StormEvents$STATE <- str_to_title(new_StormEvents$STATE)
+new_StormEvents$CZ_NAME <- str_to_title(new_StormEvents$CZ_NAME)
+```
+
+```{r task5, include = FALSE}
+#task 5: Limit to the events listed by county FIPS (CZ_TYPE of “C”) and then remove the CZ_TYPE column (5 points) 
+new_StormEvents_filtered <- new_StormEvents %>%
+  filter(CZ_TYPE == "C") %>%
+  select(-CZ_TYPE)
+```
+
+```{r task6, include = FALSE} 
+#task 6: Pad the state and county FIPS with a “0” at the beginning (hint: there’s a function in stringr to do this) and then unite the two columns to make one FIPS column with the new state-county FIPS code (5 points) 
+# Pad STATE_FIPS and CZ_FIPS with a leading zero
+new_StormEvents_filtered$STATE_FIPS_PADDED <- str_pad(new_StormEvents_filtered$STATE_FIPS, width = 2, side = "left", pad = "0")
+new_StormEvents_filtered$CZ_FIPS_PADDED <- str_pad(new_StormEvents_filtered$CZ_FIPS, width = 3, side = "left", pad = "0")
+
+# Unite STATE_FIPS_PADDED and CZ_FIPS_PADDED into a single FIPS column
+new_StormEvents_filtered$FIPS <- paste0(new_StormEvents_filtered$STATE_FIPS_PADDED, new_StormEvents_filtered$CZ_FIPS_PADDED)
+
+```
+
+```{r task7, include = FALSE}
+#task 7: Change all the column names to lower case (you may want to try the rename_all function for this) (5 points) 
+new_StormEvents_filtered <- new_StormEvents_filtered %>%
+  rename_all(tolower)
+```
+
+```{r task8, include = FALSE}
+#task 8: here is data that comes with base R on U.S. states (data("state")). Use that to create a dataframe with these three columns: state name, area, and region (5 points)
+data("state")
+us_state_info<-data.frame(state=state.name, region=state.region, area=state.area)
+```
+
+```{r task9, echo=FALSE}
+#task 9: Create a dataframe with the number of events per state. Merge in the state information dataframe you just created in step 8. Remove any states that are not in the state information dataframe. (5 points) 
+# Create a frequency table of states
+
+state_freq_table <- data.frame(table(new_StormEvents_filtered$state))
+
+# Rename the column Var1 to state
+state_freq_table <-rename(state_freq_table, c("state"="Var1"))
+
+# Merge the state frequency table with us_state_info dataframe
+merged <- merge(x = state_freq_table, y = us_state_info, by.x = "state", by.y = "state")
+
+```
+
+```{r task10, echo=FALSE}
+#task 10: Create the following plot (10 points):
+library(ggplot2)
+storm_plot <- ggplot(merged, aes (x=area, y=Freq)) + geom_point(aes(color=region))+labs(x= "Land area (square miles)", y ="# of storm events in 1997")
+print (storm_plot)
+```
+
